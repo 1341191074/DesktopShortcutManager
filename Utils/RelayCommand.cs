@@ -2,7 +2,7 @@
 using System;
 using System.Windows.Input;
 
-namespace DesktopShortcutManager
+namespace DesktopShortcutManager.Utils
 {
     public class RelayCommand<T> : ICommand
     {

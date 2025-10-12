@@ -1,9 +1,10 @@
 ﻿// C#: SettingsService.cs
+using DesktopShortcutManager.Models;
 using System;
 using System.IO;
 using System.Text.Json;
 
-namespace DesktopShortcutManager
+namespace DesktopShortcutManager.Services
 {
     public class SettingsService
     {

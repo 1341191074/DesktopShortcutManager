@@ -1,4 +1,5 @@
 ﻿// C#: SettingsWindow.xaml.cs (确认此结构)
+using DesktopShortcutManager.Services;
 using System.Windows;
 
 namespace DesktopShortcutManager

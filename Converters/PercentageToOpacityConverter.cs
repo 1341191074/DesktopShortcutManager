@@ -3,7 +3,7 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace DesktopShortcutManager
+namespace DesktopShortcutManager.Converters
 {
     public class PercentageToOpacityConverter : IValueConverter
     {

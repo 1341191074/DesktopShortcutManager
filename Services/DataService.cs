@@ -1,10 +1,11 @@
 ﻿// C#: DataService.cs
+using DesktopShortcutManager.Models;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json; // <-- 导入Json命名空间
 
-namespace DesktopShortcutManager
+namespace DesktopShortcutManager.Services
 {
     public class DataService
     {

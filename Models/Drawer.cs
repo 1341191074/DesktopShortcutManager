@@ -1,8 +1,9 @@
 ﻿// C#: Drawer.cs
+using DesktopShortcutManager.Utils;
 using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
-namespace DesktopShortcutManager
+namespace DesktopShortcutManager.Models
 {
     // 继承ObservableObject以获得通知能力
     public class Drawer : ObservableObject

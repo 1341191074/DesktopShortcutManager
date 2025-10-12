@@ -1,4 +1,7 @@
-﻿using System.ComponentModel;
+﻿using DesktopShortcutManager.Models;
+using DesktopShortcutManager.Services;
+using DesktopShortcutManager.ViewModels;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -33,8 +36,8 @@ namespace DesktopShortcutManager
 
         private void MainWindow_Closing(object? sender, CancelEventArgs e)
         {
-            // Real-time saving is implemented, but we do a final save here just in case.
-            // Also, this is where we must save settings.
+            // The real-time save handles most cases, but this ensures a final save on clean exit
+            // and is crucial for saving the settings.
             _viewModel.GetDataService().Save(_viewModel.Drawers);
             SettingsService.Instance.Save();
         }
@@ -65,28 +68,16 @@ namespace DesktopShortcutManager
         {
             if (!SettingsService.Instance.CurrentSettings.OpenWithDoubleClick)
             {
-                if (sender is FrameworkElement element && element.Tag is ShortcutItem item)
+                if (sender is FrameworkElement element && element.DataContext is ShortcutItem item)
                 {
                     _viewModel.LaunchShortcut(item);
                 }
             }
-        }
-
-        private void Shortcut_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (SettingsService.Instance.CurrentSettings.OpenWithDoubleClick)
-            {
-                if (sender is FrameworkElement element && element.Tag is ShortcutItem item)
-                {
-                    _viewModel.LaunchShortcut(item);
-                }
-            }
-            e.Handled = true;
         }
 
         private void DeleteShortcut_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is ShortcutItem item)
+            if (sender is Button button && button.DataContext is ShortcutItem item)
             {
                 _viewModel.DeleteShortcut(item);
             }

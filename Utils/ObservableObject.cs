@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace DesktopShortcutManager
+namespace DesktopShortcutManager.Utils
 {
     // 一个实现了INotifyPropertyChanged接口的基类，可以被所有需要通知UI更新的Model或ViewModel继承
     public class ObservableObject : INotifyPropertyChanged

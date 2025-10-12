@@ -1,4 +1,7 @@
-﻿using GongSolutions.Wpf.DragDrop;
+﻿using DesktopShortcutManager.Models;
+using DesktopShortcutManager.Services;
+using DesktopShortcutManager.Utils;
+using GongSolutions.Wpf.DragDrop;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -13,7 +16,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace DesktopShortcutManager
+namespace DesktopShortcutManager.ViewModels
 {
     public class MainViewModel : ObservableObject, IDropTarget
     {

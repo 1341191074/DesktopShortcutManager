@@ -9,17 +9,21 @@
     <UseWPF>true</UseWPF>
 	<EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\lock.png" />
+    <None Remove="Assets\setting.ico" />
+    <None Remove="Assets\settings.ico" />
+    <None Remove="Assets\unlock.png" />
+  </ItemGroup>
  <ItemGroup>
 	<PackageReference Include="gong-wpf-dragdrop" Version="4.0.0" />
 	<PackageReference Include="System.Drawing.Common" Version="8.0.0" />
  </ItemGroup>
  <ItemGroup>
-   <Folder Include="Commands\" />
-   <Folder Include="Converters\" />
-   <Folder Include="Models\" />
-   <Folder Include="Services\" />
-   <Folder Include="ViewModels\" />
-   <Folder Include="Views\" />
+   <Resource Include="Assets\lock.png" />
+   <Resource Include="Assets\settings.ico" />
+   <Resource Include="Assets\unlock.png" />
  </ItemGroup>
 
 </Project>

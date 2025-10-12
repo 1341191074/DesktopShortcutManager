@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace DesktopShortcutManager
+namespace DesktopShortcutManager.Utils
 {
     // 这是一个标准的WPF辅助类，用于解决在无法直接访问DataContext的元素（如ContextMenu）中进行数据绑定的问题。
     // 它继承自Freezable，因此可以被放置在资源字典中。

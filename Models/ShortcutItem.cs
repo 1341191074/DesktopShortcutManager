@@ -1,8 +1,10 @@
-﻿using System.Text.Json.Serialization;
+﻿using DesktopShortcutManager.Utils;
+using DesktopShortcutManager.ViewModels;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Media;
 
-namespace DesktopShortcutManager
+namespace DesktopShortcutManager.Models
 {
     public class ShortcutItem : ObservableObject
     {
