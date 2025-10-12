@@ -19,6 +19,7 @@ namespace DesktopShortcutManager
             _viewModel = new MainViewModel();
             this.DataContext = _viewModel;
 
+            // Manually create binding for Opacity
             var settingsModel = SettingsService.Instance.CurrentSettings;
             var opacityBinding = new Binding("OpacityValue")
             {
@@ -32,6 +33,8 @@ namespace DesktopShortcutManager
 
         private void MainWindow_Closing(object? sender, CancelEventArgs e)
         {
+            // Real-time saving is implemented, but we do a final save here just in case.
+            // Also, this is where we must save settings.
             _viewModel.GetDataService().Save(_viewModel.Drawers);
             SettingsService.Instance.Save();
         }
@@ -51,22 +54,34 @@ namespace DesktopShortcutManager
             settingsWindow.ShowDialog();
         }
 
-
-
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
         }
         #endregion
 
-
         #region Item Interactions
-        private void Shortcut_Click(object sender, RoutedEventArgs e)
+        private void Shortcut_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is Button button && button.Tag is ShortcutItem item)
+            if (!SettingsService.Instance.CurrentSettings.OpenWithDoubleClick)
             {
-                _viewModel.LaunchShortcut(item);
+                if (sender is FrameworkElement element && element.Tag is ShortcutItem item)
+                {
+                    _viewModel.LaunchShortcut(item);
+                }
             }
+        }
+
+        private void Shortcut_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (SettingsService.Instance.CurrentSettings.OpenWithDoubleClick)
+            {
+                if (sender is FrameworkElement element && element.Tag is ShortcutItem item)
+                {
+                    _viewModel.LaunchShortcut(item);
+                }
+            }
+            e.Handled = true;
         }
 
         private void DeleteShortcut_Click(object sender, RoutedEventArgs e)
@@ -83,8 +98,6 @@ namespace DesktopShortcutManager
             _viewModel.AddDrawer(NewDrawerNameTextBox.Text);
             NewDrawerNameTextBox.Clear();
         }
-
-
 
         private void NewDrawerNameTextBox_KeyDown(object sender, KeyEventArgs e)
         {

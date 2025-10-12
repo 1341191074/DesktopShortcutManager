@@ -10,23 +10,23 @@
         Title="Shortcut Dock" 
         Height="700" 
         Width="280"
+        MinWidth="200" 
+        MinHeight="300"
         
         AllowsTransparency="True" 
         WindowStyle="None" 
         Background="Transparent"
-        ResizeMode="NoResize"
+        ResizeMode="CanResizeWithGrip"
         WindowStartupLocation="CenterScreen"
         
-        AllowDrop="True" 
-        >
- 
+        AllowDrop="True">
 
     <Window.Resources>
         <local:BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        <local:InvertBoolConverter x:Key="InvertBoolConverter"/>
         <local:PercentageToOpacityConverter x:Key="PercentageToOpacity"/>
+        <local:BindingProxy x:Key="Proxy" Data="{Binding}"/>
     </Window.Resources>
-
-
 
     <Border BorderBrush="#444" BorderThickness="1" CornerRadius="8" Background="#FFECECEC">
         <Grid>
@@ -40,6 +40,20 @@
             <Border Grid.Row="0" x:Name="DragHandle" Background="#D0FFFFFF" CornerRadius="8,8,0,0"
                     MouseLeftButtonDown="DragHandle_MouseLeftButtonDown" Cursor="SizeAll">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
+                    <ToggleButton x:Name="LockButton" Width="30" Height="30" 
+                                  ToolTip="锁定/解锁窗口位置"
+                                  IsChecked="{Binding Source={x:Static local:SettingsService.Instance}, Path=CurrentSettings.IsLocked, Mode=TwoWay}">
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton">
+                                <Setter Property="Content" Value="🔓"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsChecked" Value="True">
+                                        <Setter Property="Content" Value="🔒"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
                     <Button x:Name="SettingsButton" Content="⚙️" Width="30" Height="30" 
                             ToolTip="打开设置" Click="SettingsButton_Click" Background="Transparent" BorderBrush="Transparent"/>
                     <Button x:Name="CloseButton" Content="✕" Width="30" Height="30" 
@@ -62,9 +76,10 @@
                                                   HorizontalContentAlignment="Stretch" BorderThickness="0" Background="Transparent">
                                         <ToggleButton.ContextMenu>
                                             <ContextMenu>
-                                                <MenuItem Header="重命名" Command="{Binding DataContext.RenameCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
+                                                <!-- 👇 核心修正第二步：通过“桥梁”来绑定命令 👇 -->
+                                                <MenuItem Header="重命名" Command="{Binding Source={StaticResource Proxy}, Path=Data.RenameCommand}" CommandParameter="{Binding}"/>
                                                 <Separator/>
-                                                <MenuItem Header="删除抽屉" Command="{Binding DataContext.DeleteDrawerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
+                                                <MenuItem Header="删除抽屉" Command="{Binding Source={StaticResource Proxy}, Path=Data.DeleteDrawerCommand}" CommandParameter="{Binding}"/>
                                             </ContextMenu>
                                         </ToggleButton.ContextMenu>
                                         <Grid>
@@ -73,7 +88,7 @@
                                             <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" FontSize="16" FontWeight="Bold"
                                                      Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}" KeyDown="EditableTextBox_KeyDown">
                                                 <TextBox.InputBindings>
-                                                    <KeyBinding Key="Escape" Command="{Binding DataContext.EndEditingCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
+                                                    <KeyBinding Key="Escape" Command="{Binding DataContext.EndEditingCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
                                                 </TextBox.InputBindings>
                                             </TextBox>
                                             <TextBlock Text="▼" FontSize="12" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Right">
@@ -107,27 +122,32 @@
                                                   gong:DragDrop.DropHandler="{Binding}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Button Tag="{Binding}" HorizontalContentAlignment="Stretch" Click="Shortcut_Click" ToolTip="{Binding Path}">
-                                                    <Button.ContextMenu>
-                                                        <ContextMenu>
-                                                            <MenuItem Header="重命名" Command="{Binding DataContext.RenameCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
-                                                            <MenuItem Header="在文件管理器中显示" Command="{Binding DataContext.ShowInExplorerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
-                                                            <Separator />
-                                                            <MenuItem Header="删除" Command="{Binding DataContext.DeleteShortcutCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
-                                                        </ContextMenu>
-                                                    </Button.ContextMenu>
-                                                    <Button.Template>
-                                                        <ControlTemplate TargetType="Button">
-                                                            <Border x:Name="border" Background="Transparent" Padding="5" CornerRadius="4">
-                                                                <ContentPresenter/>
-                                                            </Border>
-                                                            <ControlTemplate.Triggers>
+                                                <Border Tag="{Binding}" ToolTip="{Binding Path}" CornerRadius="4" Padding="5"
+                                                        MouseLeftButtonUp="Shortcut_MouseLeftButtonUp">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding MouseAction="LeftDoubleClick" 
+                                                                      Command="{Binding DataContext.LaunchShortcutCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                      CommandParameter="{Binding}"/>
+                                                    </Border.InputBindings>
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="Transparent"/>
+                                                            <Style.Triggers>
                                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter TargetName="border" Property="Background" Value="#20000000"/>
+                                                                    <Setter Property="Background" Value="#20000000"/>
                                                                 </Trigger>
-                                                            </ControlTemplate.Triggers>
-                                                        </ControlTemplate>
-                                                    </Button.Template>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <Border.ContextMenu>
+                                                        <ContextMenu>
+                                                            <!-- 👇 核心修正第二步：通过“桥梁”来绑定命令 👇 -->
+                                                            <MenuItem Header="重命名" Command="{Binding Source={StaticResource Proxy}, Path=Data.RenameCommand}" CommandParameter="{Binding}"/>
+                                                            <MenuItem Header="在文件管理器中显示" Command="{Binding Source={StaticResource Proxy}, Path=Data.ShowInExplorerCommand}" CommandParameter="{Binding}"/>
+                                                            <Separator />
+                                                            <MenuItem Header="删除" Command="{Binding Source={StaticResource Proxy}, Path=Data.DeleteShortcutCommand}" CommandParameter="{Binding}"/>
+                                                        </ContextMenu>
+                                                    </Border.ContextMenu>
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="Auto"/>
@@ -140,13 +160,13 @@
                                                         <TextBox Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" FontSize="14"
                                                                  Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}" KeyDown="EditableTextBox_KeyDown">
                                                             <TextBox.InputBindings>
-                                                                <KeyBinding Key="Escape" Command="{Binding DataContext.EndEditingCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
+                                                                <KeyBinding Key="Escape" Command="{Binding DataContext.EndEditingCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
                                                             </TextBox.InputBindings>
                                                         </TextBox>
                                                         <Button Grid.Column="2" x:Name="DeleteButton" Content="🗑️" Tag="{Binding}" Click="DeleteShortcut_Click"
                                                                 Width="25" Height="25" Margin="0,0,5,0" BorderThickness="0" Background="Transparent" Visibility="Hidden"/>
                                                     </Grid>
-                                                </Button>
+                                                </Border>
                                                 <DataTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
                                                         <Setter TargetName="DeleteButton" Property="Visibility" Value="Visible"/>

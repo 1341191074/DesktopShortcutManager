@@ -16,5 +16,12 @@ namespace DesktopShortcutManager
             get => _opacityValue;
             set { _opacityValue = value; OnPropertyChanged(); } // 关键：调用 OnPropertyChanged
         }
+
+        private bool _openWithDoubleClick = true; // 默认双击打开
+        public bool OpenWithDoubleClick
+        {
+            get => _openWithDoubleClick;
+            set { _openWithDoubleClick = value; OnPropertyChanged(); }
+        }
     }
 }

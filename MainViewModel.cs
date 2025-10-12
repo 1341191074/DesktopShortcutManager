@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -18,6 +19,7 @@ namespace DesktopShortcutManager
     {
         public ObservableCollection<Drawer> Drawers { get; set; }
         private readonly DataService _dataService;
+        private Timer? _debounceTimer;
 
         #region Commands
         public ICommand DeleteShortcutCommand { get; }
@@ -25,6 +27,7 @@ namespace DesktopShortcutManager
         public ICommand DeleteDrawerCommand { get; }
         public ICommand RenameCommand { get; }
         public ICommand EndEditingCommand { get; }
+        public ICommand LaunchShortcutCommand { get; }
         #endregion
 
         public MainViewModel()
@@ -33,12 +36,12 @@ namespace DesktopShortcutManager
             Drawers = _dataService.Load();
 
             // Initialize commands
-            // 👇 注意：这里将 public 的 DeleteShortcut 方法传递给命令
             DeleteShortcutCommand = new RelayCommand<ShortcutItem>(DeleteShortcut);
             ShowInExplorerCommand = new RelayCommand<ShortcutItem>(ShowInExplorer);
             DeleteDrawerCommand = new RelayCommand<Drawer>(DeleteDrawer);
             RenameCommand = new RelayCommand<object>(StartEditing);
             EndEditingCommand = new RelayCommand<object>(EndEditing);
+            LaunchShortcutCommand = new RelayCommand<ShortcutItem>(LaunchShortcut);
 
             if (Drawers.Count == 0)
             {
@@ -48,6 +51,8 @@ namespace DesktopShortcutManager
             {
                 _ = RestoreIconsAsync();
             }
+
+            SubscribeToCollectionChanges();
         }
 
         public DataService GetDataService() => _dataService;
@@ -65,6 +70,28 @@ namespace DesktopShortcutManager
             await Task.WhenAll(loadTasks);
         }
 
+        #region Real-time Saving
+        private void SubscribeToCollectionChanges()
+        {
+            Drawers.CollectionChanged += OnDataChanged;
+            foreach (var drawer in Drawers)
+            {
+                drawer.Items.CollectionChanged += OnDataChanged;
+            }
+        }
+
+        private void OnDataChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            _debounceTimer?.Dispose();
+            _debounceTimer = new Timer(
+                callback: _ => _dataService.Save(Drawers),
+                state: null,
+                dueTime: 500,
+                period: Timeout.Infinite);
+        }
+        #endregion
+
+        #region Core Logic Methods
         public void AddShortcuts(string[] filePaths, Drawer targetDrawer)
         {
             if (targetDrawer == null) return;
@@ -118,10 +145,9 @@ namespace DesktopShortcutManager
                 MessageBox.Show($"无法打开文件：\n{item.Path}\n\n错误: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        #endregion
 
         #region Command Methods
-
-        // --- 👇 修正：将此方法改为 public，以便 MainWindow.xaml.cs 可以调用 ---
         public void DeleteShortcut(ShortcutItem? itemToDelete)
         {
             if (itemToDelete == null) return;
@@ -163,6 +189,7 @@ namespace DesktopShortcutManager
                                          "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
+                drawerToDelete.Items.CollectionChanged -= OnDataChanged;
                 Drawers.Remove(drawerToDelete);
             }
         }
@@ -175,32 +202,27 @@ namespace DesktopShortcutManager
                 MessageBox.Show("已存在同名的抽屉。", "提示");
                 return;
             }
-            Drawers.Add(new Drawer(drawerName));
+            var newDrawer = new Drawer(drawerName);
+            newDrawer.Items.CollectionChanged += OnDataChanged;
+            Drawers.Add(newDrawer);
         }
         #endregion
 
         #region GongSolutions.Wpf.DragDrop IDropTarget Implementation
-
         public void DragOver(IDropInfo dropInfo)
         {
-            // --- 👇 核心修正：在这里统一处理所有拖放类型 ---
-
-            // 1. 处理内部快捷方式的拖拽
             if (dropInfo.Data is ShortcutItem && dropInfo.TargetCollection is ObservableCollection<ShortcutItem>)
             {
                 dropInfo.DropTargetAdorner = DropTargetAdorners.Insert;
                 dropInfo.Effects = DragDropEffects.Move;
             }
-            // 2. 处理内部抽屉的拖拽
             else if (dropInfo.Data is Drawer && dropInfo.TargetCollection is ObservableCollection<Drawer>)
             {
                 dropInfo.DropTargetAdorner = DropTargetAdorners.Insert;
                 dropInfo.Effects = DragDropEffects.Move;
             }
-            // 3. 新增：处理从外部拖入的文件
             else if (dropInfo.Data is IDataObject dataObject && dataObject.GetDataPresent(DataFormats.FileDrop))
             {
-                // 如果鼠标悬浮在一个抽屉上，就允许放置
                 if (dropInfo.TargetItem is Drawer)
                 {
                     dropInfo.DropTargetAdorner = DropTargetAdorners.Highlight;
@@ -211,28 +233,25 @@ namespace DesktopShortcutManager
 
         public void Drop(IDropInfo dropInfo)
         {
-            // --- 👇 核心修正：在这里统一处理所有放置逻辑 ---
-
-            // 1. 处理内部快捷方式的放置
             if (dropInfo.Data is ShortcutItem shortcut)
             {
-                // ... (这部分逻辑保持不变)
                 ((ObservableCollection<ShortcutItem>)dropInfo.DragInfo.SourceCollection).Remove(shortcut);
                 ((ObservableCollection<ShortcutItem>)dropInfo.TargetCollection).Insert(dropInfo.InsertIndex, shortcut);
             }
-            // 2. 处理内部抽屉的放置
             else if (dropInfo.Data is Drawer drawer)
             {
-                // ... (这部分逻辑保持不变)
                 var collection = (ObservableCollection<Drawer>)dropInfo.TargetCollection;
-                // ... (移动逻辑)
+                int oldIndex = collection.IndexOf(drawer);
+                int newIndex = dropInfo.InsertIndex;
+                if (oldIndex >= 0 && newIndex >= 0)
+                {
+                    if (oldIndex < newIndex) newIndex--;
+                    collection.Move(oldIndex, newIndex);
+                }
             }
-            // 3. 新增：处理从外部拖入的文件的放置
             else if (dropInfo.Data is IDataObject dataObject && dataObject.GetDataPresent(DataFormats.FileDrop))
             {
                 var files = (string[])dataObject.GetData(DataFormats.FileDrop);
-
-                // dropInfo.TargetItem 就是鼠标指针下方的那个抽屉对象
                 if (dropInfo.TargetItem is Drawer targetDrawer)
                 {
                     AddShortcuts(files, targetDrawer);
