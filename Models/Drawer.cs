@@ -23,7 +23,7 @@ namespace DesktopShortcutManager.Models
 
         }
         private bool _isDropTarget;
-        [JsonIgnore] // 这个状态不需要被保存
+        [JsonIgnore] 
         public bool IsDropTarget
         {
             get => _isDropTarget;

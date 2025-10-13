@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Assets\close.png" />
     <None Remove="Assets\lock.png" />
     <None Remove="Assets\setting.ico" />
     <None Remove="Assets\settings.ico" />
@@ -18,9 +19,11 @@
   </ItemGroup>
  <ItemGroup>
 	<PackageReference Include="gong-wpf-dragdrop" Version="4.0.0" />
+	<PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
 	<PackageReference Include="System.Drawing.Common" Version="8.0.0" />
  </ItemGroup>
  <ItemGroup>
+   <Resource Include="Assets\close.png" />
    <Resource Include="Assets\lock.png" />
    <Resource Include="Assets\settings.ico" />
    <Resource Include="Assets\unlock.png" />

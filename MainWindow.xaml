@@ -19,15 +19,22 @@
         MinWidth="200" 
         MinHeight="300"
         
-        AllowsTransparency="True" 
-        WindowStyle="None" 
+        WindowStyle="ToolWindow" 
         Background="Transparent"
         ResizeMode="CanResizeWithGrip"
         WindowStartupLocation="CenterScreen"
-        
+        ShowInTaskbar="False"
         AllowDrop="True">
 
     <Window.Resources>
+
+        <!-- 颜色主题 -->
+        <SolidColorBrush x:Key="PrimaryColor" Color="#2C3E50"/>
+        <SolidColorBrush x:Key="AccentColor" Color="#3498DB"/>
+        <SolidColorBrush x:Key="SecondaryColor" Color="#1ABC9C"/>
+        <SolidColorBrush x:Key="DarkColor" Color="#1A252F"/>
+        <SolidColorBrush x:Key="LightColor" Color="#ECF0F1"/>
+
         <!-- Converters -->
         <converters:BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
         <converters:InvertBoolConverter x:Key="InvertBoolConverter"/>
@@ -43,7 +50,8 @@
             <Border DataContext="{Binding}" ToolTip="{Binding Path}" CornerRadius="4" Padding="5"
                     Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize, Converter={StaticResource SizeToContainerConverter}}"
                     Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize, Converter={StaticResource SizeToContainerConverter}}"
-                    MouseLeftButtonUp="Shortcut_MouseLeftButtonUp">
+                    MouseLeftButtonUp="Shortcut_MouseLeftButtonUp"
+                    >
                 <Border.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick" 
                                   Command="{Binding Source={StaticResource Proxy}, Path=Data.LaunchShortcutCommand}"
@@ -58,9 +66,26 @@
                     </ContextMenu>
                 </Border.ContextMenu>
                 <Border.Style>
-                    <Style TargetType="Border">
+                    <!-- 为快捷方式项添加悬停和选中效果 -->
+                    <Style TargetType="Border" >
                         <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="CornerRadius" Value="8"/>
+                        <Setter Property="Padding" Value="8"/>
+                        <Setter Property="Margin" Value="4"/>
+                        <Setter Property="Effect">
+                            <Setter.Value>
+                                <DropShadowEffect BlurRadius="0" Opacity="0" />
+                            </Setter.Value>
+                        </Setter>
                         <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect BlurRadius="8" Opacity="0.2" Color="#000000"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#20000000"/>
                             </Trigger>
@@ -84,48 +109,106 @@
                 </StackPanel>
             </Border>
         </DataTemplate>
+        
+        
+        <DropShadowEffect x:Key="WindowShadow" 
+                  BlurRadius="15" 
+                  ShadowDepth="3" 
+                  Color="#33000000" 
+                  Opacity="0.7"/>
+        <!-- 阴影效果 -->
+        <DropShadowEffect x:Key="ButtonShadow" BlurRadius="5" Opacity="0.3" Direction="270" ShadowDepth="2"/>
+        <DropShadowEffect x:Key="PanelShadow" BlurRadius="10" Opacity="0.2" Direction="270" ShadowDepth="3"/>
+        <!-- 升级按钮样式，添加过渡动画 -->
+        <Style x:Key="RoundButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                        Background="{TemplateBinding Background}" 
+                        CornerRadius="16"
+                        >
+                            <!-- 平滑过渡 -->
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1A0078D7"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="1.1" Duration="0:0:0.2"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="1.1" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="1" Duration="0:0:0.2"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="1" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#2A0078D7"/>
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 滑块样式 -->
+        <Style TargetType="Slider">
+            <Setter Property="Foreground" Value="{StaticResource AccentColor}"/>
+            <Setter Property="Height" Value="8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid>
+                            <Track x:Name="PART_Track">
+                                <Track.Thumb>
+                                    <Thumb Width="16" Height="16" Background="{StaticResource AccentColor}" 
+                                       BorderThickness="0" />
+                                </Track.Thumb>
+
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Background="{StaticResource AccentColor}"/>
+                                </Track.DecreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
     </Window.Resources>
 
-    <Border BorderBrush="#444" BorderThickness="1" CornerRadius="8" Background="#FFECECEC">
+    <Border BorderBrush="#444" BorderThickness="0" CornerRadius="0,0,12,12" Effect="{StaticResource WindowShadow}" Background="#FFECECEC">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-
-            <!-- Top Bar -->
-            <Grid Grid.Row="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Grid.ColumnSpan="2" Background="#D0FFFFFF" CornerRadius="8,8,0,0"/>
-                <Border Grid.Column="0" Background="Transparent" x:Name="DragHandle"
-                        MouseLeftButtonDown="DragHandle_MouseLeftButtonDown" Cursor="SizeAll"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="5">
-                    <ToggleButton x:Name="LockButton" Width="30" Height="30" 
-                                  ToolTip="锁定/解锁窗口位置" Cursor="Hand"
-                                  IsChecked="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IsLocked, Mode=TwoWay}">
-                        <ToggleButton.Style>
-                            <Style TargetType="ToggleButton">
-                                <Setter Property="Content" Value="🔓"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsChecked" Value="True">
-                                        <Setter Property="Content" Value="🔒"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ToggleButton.Style>
-                    </ToggleButton>
-                    <Button x:Name="SettingsButton" Content="⚙️" Width="30" Height="30" 
-                            ToolTip="打开设置" Click="SettingsButton_Click" Background="Transparent" BorderBrush="Transparent" Cursor="Hand"/>
-                    <Button x:Name="CloseButton" Content="✕" Width="30" Height="30" 
-                            Background="Transparent" BorderBrush="Transparent" Foreground="Red" FontWeight="Bold"
-                            Click="CloseButton_Click" ToolTip="Close" Cursor="Hand"/>
-                </StackPanel>
-            </Grid>
 
             <!-- Main Content Area -->
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -208,14 +291,44 @@
             </ScrollViewer>
 
             <!-- Bottom Bar -->
-            <Border Grid.Row="2" BorderBrush="#CCC" BorderThickness="0,1,0,0" Padding="5">
+            <Border Grid.Row="3" BorderBrush="#CCC" BorderThickness="0,1,0,0" Padding="5">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0" x:Name="NewDrawerNameTextBox" VerticalContentAlignment="Center" KeyDown="NewDrawerNameTextBox_KeyDown" ToolTip="输入新抽屉的名称后按回车或点击按钮"/>
-                    <Button Grid.Column="1" Content="➕ 添加抽屉" Margin="5,0,0,0" Click="AddDrawer_Click"/>
+                    <Button Grid.Column="1" Content="+添加抽屉" Margin="5,0,0,0" Click="AddDrawer_Click"/>
+
+                    <StackPanel Grid.Column="2" x:Name="ControlPanel" Orientation="Horizontal" Margin="5" Opacity="1" >
+                        <ToggleButton x:Name="LockButton" Width="30" Height="30" 
+                                  ToolTip="锁定/解锁窗口位置" Cursor="Hand"
+                                  IsChecked="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IsLocked, Mode=TwoWay}">
+                            <ToggleButton.Style>
+                                <Style TargetType="ToggleButton">
+                                    <Setter Property="Content">
+                                        <Setter.Value>
+                                            <Image Source="/Assets/unlock.png" Width="25" Height="25"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter Property="Content">
+                                                <Setter.Value>
+                                                    <Image Source="/Assets/lock.png" Width="25" Height="25"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ToggleButton.Style>
+                        </ToggleButton>
+                        <Button x:Name="SettingsButton" Width="25" Height="25" 
+                            ToolTip="打开设置" Click="SettingsButton_Click" Background="Transparent" BorderBrush="Transparent" Cursor="Hand">
+                            <Image Source="/Assets/settings.ico" />
+                        </Button>
+                    </StackPanel>
                 </Grid>
             </Border>
         </Grid>
