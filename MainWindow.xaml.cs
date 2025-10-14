@@ -1,22 +1,19 @@
-﻿using System;
-using DesktopShortcutManager.Models;
+﻿using DesktopShortcutManager.Models;
 using DesktopShortcutManager.Services;
 using DesktopShortcutManager.ViewModels;
+using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace DesktopShortcutManager
 {
     public partial class MainWindow : Window
     {
-        // 系统消息：非客户区鼠标左键按下（触发窗口移动的核心消息）
-        private const int WM_NCLBUTTONDOWN = 0x00A1;
-        // 非客户区区域代码：标题栏（点击此区域会触发移动）
-        private const int HTCAPTION = 0x0002;
         private readonly MainViewModel _viewModel;
 
         public MainWindow()
@@ -26,7 +23,7 @@ namespace DesktopShortcutManager
             _viewModel = new MainViewModel();
             this.DataContext = _viewModel;
 
-            // Manually create binding for Opacity
+            // Manually create binding for Opacity as it's more reliable after window initialization
             var settingsModel = SettingsService.Instance.CurrentSettings;
             var opacityBinding = new Binding("OpacityValue")
             {
@@ -37,34 +34,20 @@ namespace DesktopShortcutManager
 
             this.Closing += MainWindow_Closing;
         }
-        // 窗口初始化时注册消息钩子
-        protected override void OnSourceInitialized(EventArgs e)
-        {
-            base.OnSourceInitialized(e);
-            // 获取窗口句柄关联的消息源
-            HwndSource source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
-            if (source != null)
-            {
-                // 注册消息处理函数
-                source.AddHook(WndProc);
-            }
-        }
 
-        // 消息处理函数：拦截并控制移动消息
-        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            // 仅当“禁止移动”且触发的是“标题栏鼠标按下”消息时，拦截移动
-            if (SettingsService.Instance.CurrentSettings.IsLocked && msg == WM_NCLBUTTONDOWN && wParam.ToInt32() == HTCAPTION)
-            {
-                // 标记消息为“已处理”，阻止系统执行默认的移动逻辑
-                handled = true;
-            }
-            return IntPtr.Zero;
-        }
+
+
         private void MainWindow_Closing(object? sender, CancelEventArgs e)
         {
+            // The real-time save handles most cases, but this ensures a final save on clean exit
+            // and is crucial for saving the settings.
             _viewModel.GetDataService().Save(_viewModel.Drawers);
             SettingsService.Instance.Save();
+        }
+
+        private void TrayExit_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
         }
 
         #region Window Control and Settings
@@ -93,6 +76,7 @@ namespace DesktopShortcutManager
         {
             if (!SettingsService.Instance.CurrentSettings.OpenWithDoubleClick)
             {
+                // The DataContext of the clicked element is the ShortcutItem
                 if (sender is FrameworkElement element && element.DataContext is ShortcutItem item)
                 {
                     _viewModel.LaunchShortcut(item);
@@ -106,13 +90,14 @@ namespace DesktopShortcutManager
             {
                 _viewModel.DeleteShortcut(item);
             }
-            e.Handled = true;
+            e.Handled = true; // Prevents the click from bubbling up to the parent item
         }
 
         private void AddDrawer_Click(object sender, RoutedEventArgs e)
         {
             _viewModel.AddDrawer(NewDrawerNameTextBox.Text);
             NewDrawerNameTextBox.Clear();
+            NewDrawerNameTextBox.Focus();
         }
 
         private void NewDrawerNameTextBox_KeyDown(object sender, KeyEventArgs e)
@@ -127,7 +112,10 @@ namespace DesktopShortcutManager
         {
             if (e.Key == Key.Enter && sender is TextBox textBox)
             {
-                textBox.GetBindingExpression(TextBox.TextProperty).UpdateSource();
+                // Force the binding to update
+                textBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+
+                // End the editing state
                 var dataContext = textBox.DataContext;
                 if (dataContext is Drawer drawer) drawer.IsEditing = false;
                 else if (dataContext is ShortcutItem shortcut) shortcut.IsEditing = false;

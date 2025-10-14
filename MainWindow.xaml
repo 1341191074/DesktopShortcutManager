@@ -11,6 +11,8 @@
         xmlns:utils="clr-namespace:DesktopShortcutManager.Utils"
         
         xmlns:gong="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.Wpf.DragDrop"
+        xmlns:tb="http://www.hardcodet.net/taskbar"
+        
         mc:Ignorable="d"
         
         Title="Shortcut Dock" 
@@ -21,30 +23,53 @@
         MinWidth="200" 
         MinHeight="300"
         
-        WindowStyle="ToolWindow" 
-        ResizeMode="CanResizeWithGrip"
+        AllowsTransparency="True" 
+        WindowStyle="None" 
+        Background="Transparent"
         WindowStartupLocation="Manual"
         ShowInTaskbar="False"
         AllowDrop="True"
         FontFamily="Segoe UI Variable, Segoe UI">
-    
-    <Window.Resources>
-        <!-- Colors -->
-        <Color x:Key="WindowBackgroundColor">#F3F6F9</Color>
-        <Color x:Key="AcrylicBackgroundColor">#E6FFFFFF</Color>
-        <Color x:Key="BorderColor">#E0E6EC</Color>
-        <Color x:Key="TextColor">#3D3D3D</Color>
-        <Color x:Key="AccentColor">#0078D7</Color>
-        <Color x:Key="ItemHoverColor">#1A0078D7</Color>
-        <Color x:Key="ErrorColor">#D32F2F</Color>
+    <Window.Style>
+        <Style TargetType="Window">
+            <!-- 默认状态：可调整大小，可拖动 -->
+            <Setter Property="ResizeMode" Value="CanResizeWithGrip"/>
+            <Setter Property="WindowChrome.WindowChrome">
+                <Setter.Value>
+                    <WindowChrome ResizeBorderThickness="10" 
+                                  CaptionHeight="40" 
+                                  CornerRadius="0" 
+                                  GlassFrameThickness="1"
+                                  UseAeroCaptionButtons="False"/>
+                </Setter.Value>
+            </Setter>
 
-        <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource WindowBackgroundColor}"/>
-        <SolidColorBrush x:Key="AcrylicBackgroundBrush" Color="{StaticResource AcrylicBackgroundColor}"/>
-        <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
-        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
-        <SolidColorBrush x:Key="ItemHoverBrush" Color="{StaticResource ItemHoverColor}"/>
-        <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
+            <Style.Triggers>
+                <!-- 当锁定为True时 -->
+                <DataTrigger Binding="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IsLocked}" Value="True">
+                    <!-- 禁用调整大小 -->
+                    <Setter Property="ResizeMode" Value="NoResize"/>
+                    <!-- 禁用 WindowChrome 的原生拖动 -->
+                    <Setter Property="WindowChrome.WindowChrome">
+                        <Setter.Value>
+                            <WindowChrome ResizeBorderThickness="0" 
+                                          CaptionHeight="0" 
+                                          CornerRadius="0" 
+                                          GlassFrameThickness="0"
+                                          UseAeroCaptionButtons="False"/>
+                        </Setter.Value>
+                    </Setter>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Style>
+
+    <Window.Resources>
+        <!-- Colors (from your version) -->
+        <Color x:Key="PrimaryColor">#2C3E50</Color>
+        <SolidColorBrush x:Key="PrimaryColorBrush" Color="{StaticResource PrimaryColor}"/>
+        <Color x:Key="AccentColor">#3498DB</Color>
+        <SolidColorBrush x:Key="AccentColorBrush" Color="{StaticResource AccentColor}"/>
 
         <!-- Converters -->
         <converters:BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
@@ -53,16 +78,15 @@
         <converters:SizeToContainerConverter x:Key="SizeToContainerConverter"/>
         <converters:SizeToFontConverter x:Key="SizeToFontConverter"/>
 
-        <!-- Binding Proxy for ContextMenu -->
+        <!-- Binding Proxy -->
         <utils:BindingProxy x:Key="Proxy" Data="{Binding}"/>
 
-        <!-- Data Templates for Grid View -->
+        <!-- Data Template with Animation -->
         <DataTemplate x:Key="ShortcutGridItemTemplate">
-            <Border DataContext="{Binding}" ToolTip="{Binding Path}" CornerRadius="4" Padding="5"
+            <Border DataContext="{Binding}" ToolTip="{Binding Path}" CornerRadius="8" Padding="8" Margin="4"
                     Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize, Converter={StaticResource SizeToContainerConverter}}"
                     Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize, Converter={StaticResource SizeToContainerConverter}}"
-                    MouseLeftButtonUp="Shortcut_MouseLeftButtonUp"
-                    >
+                    MouseLeftButtonUp="Shortcut_MouseLeftButtonUp">
                 <Border.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick" 
                                   Command="{Binding Source={StaticResource Proxy}, Path=Data.LaunchShortcutCommand}"
@@ -77,12 +101,12 @@
                     </ContextMenu>
                 </Border.ContextMenu>
                 <Border.Style>
-                    <!-- 为快捷方式项添加悬停和选中效果 -->
-                    <Style TargetType="Border" >
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="CornerRadius" Value="8"/>
-                        <Setter Property="Padding" Value="8"/>
-                        <Setter Property="Margin" Value="4"/>
+                    <Style TargetType="Border">
+                        <Setter Property="Background">
+                            <Setter.Value>
+                                <SolidColorBrush Color="Transparent"/>
+                            </Setter.Value>
+                        </Setter>
                         <Setter Property="Effect">
                             <Setter.Value>
                                 <DropShadowEffect BlurRadius="0" Opacity="0" />
@@ -90,15 +114,34 @@
                         </Setter>
                         <Style.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
-                                <Setter Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect BlurRadius="8" Opacity="0.2" Color="#000000"/>
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#20000000"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetProperty="Background.Color" To="#20000000" Duration="0:0:0.2"/>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Effect">
+                                                <DiscreteObjectKeyFrame KeyTime="0">
+                                                    <DiscreteObjectKeyFrame.Value>
+                                                        <DropShadowEffect BlurRadius="8" Opacity="0.2" Color="#000000"/>
+                                                    </DiscreteObjectKeyFrame.Value>
+                                                </DiscreteObjectKeyFrame>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetProperty="Background.Color" To="Transparent" Duration="0:0:0.2"/>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Effect">
+                                                <DiscreteObjectKeyFrame KeyTime="0">
+                                                    <DiscreteObjectKeyFrame.Value>
+                                                        <DropShadowEffect BlurRadius="0" Opacity="0" />
+                                                    </DiscreteObjectKeyFrame.Value>
+                                                </DiscreteObjectKeyFrame>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                         </Style.Triggers>
                     </Style>
@@ -120,239 +163,167 @@
                 </StackPanel>
             </Border>
         </DataTemplate>
-        
-        
-        <DropShadowEffect x:Key="WindowShadow" 
-                  BlurRadius="15" 
-                  ShadowDepth="3" 
-                  Color="#33000000" 
-                  Opacity="0.7"/>
-        <!-- 阴影效果 -->
-        <DropShadowEffect x:Key="ButtonShadow" BlurRadius="5" Opacity="0.3" Direction="270" ShadowDepth="2"/>
-        <DropShadowEffect x:Key="PanelShadow" BlurRadius="10" Opacity="0.2" Direction="270" ShadowDepth="3"/>
-        <!-- 升级按钮样式，添加过渡动画 -->
-        <Style x:Key="RoundButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Width" Value="32"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-            <Setter Property="RenderTransform">
-                <Setter.Value>
-                    <ScaleTransform ScaleX="1" ScaleY="1"/>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                        Background="{TemplateBinding Background}" 
-                        CornerRadius="16"
-                        >
-                            <!-- 平滑过渡 -->
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1A0078D7"/>
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="1.1" Duration="0:0:0.2"/>
-                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="1.1" Duration="0:0:0.2"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="1" Duration="0:0:0.2"/>
-                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="1" Duration="0:0:0.2"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#2A0078D7"/>
-                                <Setter Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- 滑块样式 -->
-        <Style TargetType="Slider">
-            <Setter Property="Foreground" Value="{StaticResource AccentColor}"/>
-            <Setter Property="Height" Value="8"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Slider">
-                        <Grid>
-                            <Track x:Name="PART_Track">
-                                <Track.Thumb>
-                                    <Thumb Width="16" Height="16" Background="{StaticResource AccentColor}" 
-                                       BorderThickness="0" />
-                                </Track.Thumb>
-
-                                <Track.DecreaseRepeatButton>
-                                    <RepeatButton Background="{StaticResource AccentColor}"/>
-                                </Track.DecreaseRepeatButton>
-                            </Track>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
 
     </Window.Resources>
-    <!-- 👇 核心修正：强化DataTrigger，这是“完全锁定”的唯一控制中心 👇 -->
-    <Window.Style>
-        <Style TargetType="Window">
-            <!-- 默认状态：可调整大小 -->
-            <Setter Property="ResizeMode" Value="CanResizeWithGrip"/>
-            <Style.Triggers>
-                <!-- 当锁定为True时 -->
-                <DataTrigger Binding="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IsLocked}" Value="True">
-                    <!-- 禁用调整大小 -->
-                    <Setter Property="ResizeMode" Value="NoResize"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-    </Window.Style>
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Border BorderBrush="#D1D8E0" BorderThickness="1" CornerRadius="8" Background="#F3F6F9">
+        <Border.Effect>
+            <DropShadowEffect ShadowDepth="0" BlurRadius="15" Color="#000" Opacity="0.2"/>
+        </Border.Effect>
+        <Grid>
+            <!-- 👇 核心修正：TaskbarIcon 现在位于 Grid 内部，并且在所有属性元素之后 👇 -->
 
-        <!-- Main Content Area -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding Drawers}"
-                            gong:DragDrop.IsDragSource="True"
-                            gong:DragDrop.IsDropTarget="True"
-                            gong:DragDrop.DropHandler="{Binding}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="{x:Type models:Drawer}">
-                        <Border x:Name="DrawerBorder" BorderBrush="Transparent" BorderThickness="2" CornerRadius="4" Margin="5">
-                            <StackPanel>
-                                <ToggleButton IsChecked="{Binding IsExpanded, Mode=TwoWay}"
-                                                HorizontalContentAlignment="Stretch" BorderThickness="0" Background="Transparent">
-                                    <ToggleButton.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="重命名" Command="{Binding Source={StaticResource Proxy}, Path=Data.RenameCommand}" CommandParameter="{Binding}"/>
-                                            <Separator/>
-                                            <MenuItem Header="删除抽屉" Command="{Binding Source={StaticResource Proxy}, Path=Data.DeleteDrawerCommand}" CommandParameter="{Binding}"/>
-                                        </ContextMenu>
-                                    </ToggleButton.ContextMenu>
-                                    <Grid>
-                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16" Foreground="#333" Margin="5"
-                                                    Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}"/>
-                                        <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" FontSize="16" FontWeight="Bold"
-                                                    Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}" KeyDown="EditableTextBox_KeyDown">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-                                            <TextBox.InputBindings>
-                                                <KeyBinding Key="Escape" Command="{Binding Source={StaticResource Proxy}, Path=Data.EndEditingCommand}" CommandParameter="{Binding}"/>
-                                            </TextBox.InputBindings>
-                                        </TextBox>
-                                        <TextBlock Text="▼" FontSize="12" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="RenderTransformOrigin" Value="0.5, 0.5"/>
-                                                    <Setter Property="RenderTransform">
-                                                        <Setter.Value>
-                                                            <RotateTransform Angle="0"/>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsExpanded}" Value="False">
-                                                            <Setter Property="RenderTransform">
-                                                                <Setter.Value>
-                                                                    <RotateTransform Angle="-90"/>
-                                                                </Setter.Value>
-                                                            </Setter>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </Grid>
-                                </ToggleButton>
-                                <Border BorderBrush="#CCC" BorderThickness="0,0,0,1" Margin="5,0"/>
-                                <ItemsControl ItemsSource="{Binding Items}"
-                                                Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibility}}"
-                                                gong:DragDrop.IsDragSource="True"
-                                                gong:DragDrop.IsDropTarget="True"
-                                                gong:DragDrop.DropHandler="{Binding}"
-                                                ItemTemplate="{StaticResource ShortcutGridItemTemplate}">
+            <!-- System Tray Icon (non-visual element) -->
+            <tb:TaskbarIcon Grid.Row="0" IconSource="/Assets/settings.ico" ToolTipText="Desktop Shortcut Manager">
+                <tb:TaskbarIcon.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="退出" Click="TrayExit_Click"/>
+                    </ContextMenu>
+                </tb:TaskbarIcon.ContextMenu>
+            </tb:TaskbarIcon>
+            <!-- 核心修正：Top Bar (自定义标题栏) -->
+            <Border Grid.Row="0" Background="#E6FFFFFF" CornerRadius="8,8,0,0"
+                    BorderBrush="#E0E6EC" BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <WrapPanel/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
+                    <Border Grid.Column="0" Background="Transparent" x:Name="DragHandle"
+                            MouseLeftButtonDown="DragHandle_MouseLeftButtonDown" Cursor="SizeAll"/>
 
-                                </ItemsControl>
-                            </StackPanel>
-                        </Border>
-                        <DataTemplate.Triggers>
-                            <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
-                                <Setter TargetName="DrawerBorder" Property="BorderBrush" Value="DodgerBlue"/>
-                                <Setter TargetName="DrawerBorder" Property="Background" Value="#201E90FF"/>
-                            </DataTrigger>
-                        </DataTemplate.Triggers>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="5">
+                        <ToggleButton x:Name="LockButton" Width="30" Height="30" ToolTip="锁定/解锁窗口位置" Cursor="Hand"
+                                      WindowChrome.IsHitTestVisibleInChrome="True" 
+                                      IsChecked="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IsLocked, Mode=TwoWay}">
+                            <ToggleButton.Style>
+                                <Style TargetType="ToggleButton">
+                                    <Setter Property="Content">
+                                        <Setter.Value>
+                                            <Image Source="/Assets/unlock.png" Width="16" Height="16"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter Property="Content">
+                                                <Setter.Value>
+                                                    <Image Source="/Assets/lock.png" Width="16" Height="16"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ToggleButton.Style>
+                        </ToggleButton>
+                        <Button x:Name="SettingsButton" Width="30" Height="30" 
+                                ToolTip="打开设置" Click="SettingsButton_Click" Background="Transparent" 
+                                BorderBrush="Transparent" Cursor="Hand"
+                                WindowChrome.IsHitTestVisibleInChrome="True">
+                            <Image Source="/Assets/settings.ico" Width="16" Height="16" />
+                        </Button>
+                        <Button x:Name="CloseButton" Width="30" Height="30" ToolTip="关闭" 
+                                Click="CloseButton_Click" Background="Transparent" BorderBrush="Transparent" 
+                                Cursor="Hand"
+                                WindowChrome.IsHitTestVisibleInChrome="True">
+                            <Image Source="/Assets/close.png" Width="16" Height="16" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <!-- Main Content Area -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Drawers}"
+                          gong:DragDrop.IsDragSource="True"
+                          gong:DragDrop.IsDropTarget="True"
+                          gong:DragDrop.DropHandler="{Binding}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type models:Drawer}">
+                            <Border x:Name="DrawerBorder" BorderBrush="Transparent" BorderThickness="2" CornerRadius="4" Margin="5">
+                                <StackPanel>
+                                    <ToggleButton IsChecked="{Binding IsExpanded, Mode=TwoWay}"
+                                              HorizontalContentAlignment="Stretch" BorderThickness="0" Background="Transparent">
+                                        <ToggleButton.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="重命名" Command="{Binding Source={StaticResource Proxy}, Path=Data.RenameCommand}" CommandParameter="{Binding}"/>
+                                                <Separator/>
+                                                <MenuItem Header="删除抽屉" Command="{Binding Source={StaticResource Proxy}, Path=Data.DeleteDrawerCommand}" CommandParameter="{Binding}"/>
+                                            </ContextMenu>
+                                        </ToggleButton.ContextMenu>
+                                        <Grid>
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16" Foreground="#333" Margin="5"
+                                                   Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}"/>
+                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" FontSize="16" FontWeight="Bold"
+                                                 Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}" KeyDown="EditableTextBox_KeyDown">
+                                                <TextBox.InputBindings>
+                                                    <KeyBinding Key="Escape" Command="{Binding Source={StaticResource Proxy}, Path=Data.EndEditingCommand}" CommandParameter="{Binding}"/>
+                                                </TextBox.InputBindings>
+                                            </TextBox>
+                                            <TextBlock Text="▼" FontSize="12" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="RenderTransformOrigin" Value="0.5, 0.5"/>
+                                                        <Setter Property="RenderTransform">
+                                                            <Setter.Value>
+                                                                <RotateTransform Angle="0"/>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsExpanded}" Value="False">
+                                                                <Setter Property="RenderTransform">
+                                                                    <Setter.Value>
+                                                                        <RotateTransform Angle="-90"/>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </ToggleButton>
+                                    <Border BorderBrush="#CCC" BorderThickness="0,0,0,1" Margin="5,0"/>
+                                    <ItemsControl ItemsSource="{Binding Items}"
+                                              Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibility}}"
+                                              gong:DragDrop.IsDragSource="True"
+                                              gong:DragDrop.IsDropTarget="True"
+                                              gong:DragDrop.DropHandler="{Binding}"
+                                              ItemTemplate="{StaticResource ShortcutGridItemTemplate}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
+                                    <Setter TargetName="DrawerBorder" Property="BorderBrush" Value="{StaticResource AccentColorBrush}"/>
+                                    <Setter TargetName="DrawerBorder" Property="Background" Value="#203498DB"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
 
-        <!-- Bottom Bar -->
-        <Border Grid.Row="3" BorderBrush="#CCC" BorderThickness="0,1,0,0" Padding="5">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0" x:Name="NewDrawerNameTextBox" VerticalContentAlignment="Center" KeyDown="NewDrawerNameTextBox_KeyDown" ToolTip="输入新抽屉的名称后按回车或点击按钮"/>
-                <Button Grid.Column="1" Content="+添加抽屉" Margin="5,0,0,0" Click="AddDrawer_Click"/>
-
-                <StackPanel Grid.Column="2" x:Name="ControlPanel" Orientation="Horizontal" Margin="5" Opacity="1" >
-                    <ToggleButton x:Name="LockButton" Width="30" Height="30" 
-                                ToolTip="锁定/解锁窗口位置" Cursor="Hand"
-                                IsChecked="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IsLocked, Mode=TwoWay}">
-                        <ToggleButton.Style>
-                            <Style TargetType="ToggleButton">
-                                <Setter Property="Content">
-                                    <Setter.Value>
-                                        <Image Source="/Assets/unlock.png" Width="25" Height="25"/>
-                                    </Setter.Value>
-                                </Setter>
-                                <Style.Triggers>
-                                    <Trigger Property="IsChecked" Value="True">
-                                        <Setter Property="Content">
-                                            <Setter.Value>
-                                                <Image Source="/Assets/lock.png" Width="25" Height="25"/>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ToggleButton.Style>
-                    </ToggleButton>
-                    <Button x:Name="SettingsButton" Width="25" Height="25" 
-                        ToolTip="打开设置" Click="SettingsButton_Click" Background="Transparent" BorderBrush="Transparent" Cursor="Hand">
-                        <Image Source="/Assets/settings.ico" />
-                    </Button>
-                </StackPanel>
-            </Grid>
-        </Border>
-    </Grid>
+            <!-- Bottom Bar -->
+            <Border Grid.Row="2" BorderBrush="#CCC" BorderThickness="0,1,0,0" Padding="5">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" x:Name="NewDrawerNameTextBox" VerticalContentAlignment="Center" KeyDown="NewDrawerNameTextBox_KeyDown" ToolTip="输入新抽屉的名称后按回车或点击按钮"/>
+                    <Button Grid.Column="1" Content="+添加抽屉" Margin="5,0,0,0" Click="AddDrawer_Click"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
 </Window>
