@@ -68,5 +68,11 @@ namespace DesktopShortcutManager.Models
                 OnPropertyChanged();
             }
         }
+        // --- 窗口几何信息 ---
+        // 我们给一个默认值，防止第一次启动时位置不确定
+        public double Top { get; set; } = 100;
+        public double Left { get; set; } = 100;
+        public double Width { get; set; } = 280;
+        public double Height { get; set; } = 700;
     }
 }

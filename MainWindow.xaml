@@ -14,26 +14,37 @@
         mc:Ignorable="d"
         
         Title="Shortcut Dock" 
-        Height="700" 
-        Width="280"
+        Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.Height, Mode=TwoWay}" 
+        Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.Width, Mode=TwoWay}"
+        Top="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.Top, Mode=TwoWay}"
+        Left="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.Left, Mode=TwoWay}"
         MinWidth="200" 
         MinHeight="300"
         
         WindowStyle="ToolWindow" 
-        Background="Transparent"
         ResizeMode="CanResizeWithGrip"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
         ShowInTaskbar="False"
-        AllowDrop="True">
-
+        AllowDrop="True"
+        FontFamily="Segoe UI Variable, Segoe UI">
+    
     <Window.Resources>
+        <!-- Colors -->
+        <Color x:Key="WindowBackgroundColor">#F3F6F9</Color>
+        <Color x:Key="AcrylicBackgroundColor">#E6FFFFFF</Color>
+        <Color x:Key="BorderColor">#E0E6EC</Color>
+        <Color x:Key="TextColor">#3D3D3D</Color>
+        <Color x:Key="AccentColor">#0078D7</Color>
+        <Color x:Key="ItemHoverColor">#1A0078D7</Color>
+        <Color x:Key="ErrorColor">#D32F2F</Color>
 
-        <!-- 颜色主题 -->
-        <SolidColorBrush x:Key="PrimaryColor" Color="#2C3E50"/>
-        <SolidColorBrush x:Key="AccentColor" Color="#3498DB"/>
-        <SolidColorBrush x:Key="SecondaryColor" Color="#1ABC9C"/>
-        <SolidColorBrush x:Key="DarkColor" Color="#1A252F"/>
-        <SolidColorBrush x:Key="LightColor" Color="#ECF0F1"/>
+        <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource WindowBackgroundColor}"/>
+        <SolidColorBrush x:Key="AcrylicBackgroundBrush" Color="{StaticResource AcrylicBackgroundColor}"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="ItemHoverBrush" Color="{StaticResource ItemHoverColor}"/>
+        <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
 
         <!-- Converters -->
         <converters:BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
@@ -201,136 +212,147 @@
         </Style>
 
     </Window.Resources>
+    <!-- 👇 核心修正：强化DataTrigger，这是“完全锁定”的唯一控制中心 👇 -->
+    <Window.Style>
+        <Style TargetType="Window">
+            <!-- 默认状态：可调整大小 -->
+            <Setter Property="ResizeMode" Value="CanResizeWithGrip"/>
+            <Style.Triggers>
+                <!-- 当锁定为True时 -->
+                <DataTrigger Binding="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IsLocked}" Value="True">
+                    <!-- 禁用调整大小 -->
+                    <Setter Property="ResizeMode" Value="NoResize"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Style>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-    <Border BorderBrush="#444" BorderThickness="0" CornerRadius="0,0,12,12" Effect="{StaticResource WindowShadow}" Background="#FFECECEC">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+        <!-- Main Content Area -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Drawers}"
+                            gong:DragDrop.IsDragSource="True"
+                            gong:DragDrop.IsDropTarget="True"
+                            gong:DragDrop.DropHandler="{Binding}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:Drawer}">
+                        <Border x:Name="DrawerBorder" BorderBrush="Transparent" BorderThickness="2" CornerRadius="4" Margin="5">
+                            <StackPanel>
+                                <ToggleButton IsChecked="{Binding IsExpanded, Mode=TwoWay}"
+                                                HorizontalContentAlignment="Stretch" BorderThickness="0" Background="Transparent">
+                                    <ToggleButton.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="重命名" Command="{Binding Source={StaticResource Proxy}, Path=Data.RenameCommand}" CommandParameter="{Binding}"/>
+                                            <Separator/>
+                                            <MenuItem Header="删除抽屉" Command="{Binding Source={StaticResource Proxy}, Path=Data.DeleteDrawerCommand}" CommandParameter="{Binding}"/>
+                                        </ContextMenu>
+                                    </ToggleButton.ContextMenu>
+                                    <Grid>
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16" Foreground="#333" Margin="5"
+                                                    Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}"/>
+                                        <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" FontSize="16" FontWeight="Bold"
+                                                    Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}" KeyDown="EditableTextBox_KeyDown">
 
-            <!-- Main Content Area -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{Binding Drawers}"
-                              gong:DragDrop.IsDragSource="True"
-                              gong:DragDrop.IsDropTarget="True"
-                              gong:DragDrop.DropHandler="{Binding}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type models:Drawer}">
-                            <Border x:Name="DrawerBorder" BorderBrush="Transparent" BorderThickness="2" CornerRadius="4" Margin="5">
-                                <StackPanel>
-                                    <ToggleButton IsChecked="{Binding IsExpanded, Mode=TwoWay}"
-                                                  HorizontalContentAlignment="Stretch" BorderThickness="0" Background="Transparent">
-                                        <ToggleButton.ContextMenu>
-                                            <ContextMenu>
-                                                <MenuItem Header="重命名" Command="{Binding Source={StaticResource Proxy}, Path=Data.RenameCommand}" CommandParameter="{Binding}"/>
-                                                <Separator/>
-                                                <MenuItem Header="删除抽屉" Command="{Binding Source={StaticResource Proxy}, Path=Data.DeleteDrawerCommand}" CommandParameter="{Binding}"/>
-                                            </ContextMenu>
-                                        </ToggleButton.ContextMenu>
-                                        <Grid>
-                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16" Foreground="#333" Margin="5"
-                                                       Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}"/>
-                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" FontSize="16" FontWeight="Bold"
-                                                     Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}" KeyDown="EditableTextBox_KeyDown">
+                                            <TextBox.InputBindings>
+                                                <KeyBinding Key="Escape" Command="{Binding Source={StaticResource Proxy}, Path=Data.EndEditingCommand}" CommandParameter="{Binding}"/>
+                                            </TextBox.InputBindings>
+                                        </TextBox>
+                                        <TextBlock Text="▼" FontSize="12" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="RenderTransformOrigin" Value="0.5, 0.5"/>
+                                                    <Setter Property="RenderTransform">
+                                                        <Setter.Value>
+                                                            <RotateTransform Angle="0"/>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsExpanded}" Value="False">
+                                                            <Setter Property="RenderTransform">
+                                                                <Setter.Value>
+                                                                    <RotateTransform Angle="-90"/>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </ToggleButton>
+                                <Border BorderBrush="#CCC" BorderThickness="0,0,0,1" Margin="5,0"/>
+                                <ItemsControl ItemsSource="{Binding Items}"
+                                                Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibility}}"
+                                                gong:DragDrop.IsDragSource="True"
+                                                gong:DragDrop.IsDropTarget="True"
+                                                gong:DragDrop.DropHandler="{Binding}"
+                                                ItemTemplate="{StaticResource ShortcutGridItemTemplate}">
 
-                                                <TextBox.InputBindings>
-                                                    <KeyBinding Key="Escape" Command="{Binding Source={StaticResource Proxy}, Path=Data.EndEditingCommand}" CommandParameter="{Binding}"/>
-                                                </TextBox.InputBindings>
-                                            </TextBox>
-                                            <TextBlock Text="▼" FontSize="12" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="RenderTransformOrigin" Value="0.5, 0.5"/>
-                                                        <Setter Property="RenderTransform">
-                                                            <Setter.Value>
-                                                                <RotateTransform Angle="0"/>
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsExpanded}" Value="False">
-                                                                <Setter Property="RenderTransform">
-                                                                    <Setter.Value>
-                                                                        <RotateTransform Angle="-90"/>
-                                                                    </Setter.Value>
-                                                                </Setter>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </Grid>
-                                    </ToggleButton>
-                                    <Border BorderBrush="#CCC" BorderThickness="0,0,0,1" Margin="5,0"/>
-                                    <ItemsControl ItemsSource="{Binding Items}"
-                                                  Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibility}}"
-                                                  gong:DragDrop.IsDragSource="True"
-                                                  gong:DragDrop.IsDropTarget="True"
-                                                  gong:DragDrop.DropHandler="{Binding}"
-                                                  ItemTemplate="{StaticResource ShortcutGridItemTemplate}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
 
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <WrapPanel/>
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
+                                <Setter TargetName="DrawerBorder" Property="BorderBrush" Value="DodgerBlue"/>
+                                <Setter TargetName="DrawerBorder" Property="Background" Value="#201E90FF"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
 
-                                    </ItemsControl>
-                                </StackPanel>
-                            </Border>
-                            <DataTemplate.Triggers>
-                                <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
-                                    <Setter TargetName="DrawerBorder" Property="BorderBrush" Value="DodgerBlue"/>
-                                    <Setter TargetName="DrawerBorder" Property="Background" Value="#201E90FF"/>
-                                </DataTrigger>
-                            </DataTemplate.Triggers>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+        <!-- Bottom Bar -->
+        <Border Grid.Row="3" BorderBrush="#CCC" BorderThickness="0,1,0,0" Padding="5">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" x:Name="NewDrawerNameTextBox" VerticalContentAlignment="Center" KeyDown="NewDrawerNameTextBox_KeyDown" ToolTip="输入新抽屉的名称后按回车或点击按钮"/>
+                <Button Grid.Column="1" Content="+添加抽屉" Margin="5,0,0,0" Click="AddDrawer_Click"/>
 
-            <!-- Bottom Bar -->
-            <Border Grid.Row="3" BorderBrush="#CCC" BorderThickness="0,1,0,0" Padding="5">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0" x:Name="NewDrawerNameTextBox" VerticalContentAlignment="Center" KeyDown="NewDrawerNameTextBox_KeyDown" ToolTip="输入新抽屉的名称后按回车或点击按钮"/>
-                    <Button Grid.Column="1" Content="+添加抽屉" Margin="5,0,0,0" Click="AddDrawer_Click"/>
-
-                    <StackPanel Grid.Column="2" x:Name="ControlPanel" Orientation="Horizontal" Margin="5" Opacity="1" >
-                        <ToggleButton x:Name="LockButton" Width="30" Height="30" 
-                                  ToolTip="锁定/解锁窗口位置" Cursor="Hand"
-                                  IsChecked="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IsLocked, Mode=TwoWay}">
-                            <ToggleButton.Style>
-                                <Style TargetType="ToggleButton">
-                                    <Setter Property="Content">
-                                        <Setter.Value>
-                                            <Image Source="/Assets/unlock.png" Width="25" Height="25"/>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsChecked" Value="True">
-                                            <Setter Property="Content">
-                                                <Setter.Value>
-                                                    <Image Source="/Assets/lock.png" Width="25" Height="25"/>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ToggleButton.Style>
-                        </ToggleButton>
-                        <Button x:Name="SettingsButton" Width="25" Height="25" 
-                            ToolTip="打开设置" Click="SettingsButton_Click" Background="Transparent" BorderBrush="Transparent" Cursor="Hand">
-                            <Image Source="/Assets/settings.ico" />
-                        </Button>
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </Grid>
-    </Border>
+                <StackPanel Grid.Column="2" x:Name="ControlPanel" Orientation="Horizontal" Margin="5" Opacity="1" >
+                    <ToggleButton x:Name="LockButton" Width="30" Height="30" 
+                                ToolTip="锁定/解锁窗口位置" Cursor="Hand"
+                                IsChecked="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IsLocked, Mode=TwoWay}">
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton">
+                                <Setter Property="Content">
+                                    <Setter.Value>
+                                        <Image Source="/Assets/unlock.png" Width="25" Height="25"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsChecked" Value="True">
+                                        <Setter Property="Content">
+                                            <Setter.Value>
+                                                <Image Source="/Assets/lock.png" Width="25" Height="25"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
+                    <Button x:Name="SettingsButton" Width="25" Height="25" 
+                        ToolTip="打开设置" Click="SettingsButton_Click" Background="Transparent" BorderBrush="Transparent" Cursor="Hand">
+                        <Image Source="/Assets/settings.ico" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
 </Window>

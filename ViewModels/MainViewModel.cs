@@ -100,18 +100,38 @@ namespace DesktopShortcutManager.ViewModels
             if (targetDrawer == null) return;
             foreach (var path in filePaths)
             {
-                if (targetDrawer.Items.Any(item => item.Path.Equals(path, StringComparison.OrdinalIgnoreCase)))
+                var (resolvedPath, arguments) = ShortcutResolver.Resolve(path);
+                if (targetDrawer.Items.Any(item => item.Path.Equals(resolvedPath, StringComparison.OrdinalIgnoreCase)))
                 {
-                    MessageBox.Show($"快捷方式 '{Path.GetFileName(path)}' 已存在于抽屉 '{targetDrawer.Name}' 中。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"快捷方式 '{Path.GetFileName(resolvedPath)}' 已存在于抽屉 '{targetDrawer.Name}' 中。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
                     continue;
                 }
+
                 var newShortcut = new ShortcutItem
                 {
-                    Name = Path.GetFileNameWithoutExtension(path),
-                    Path = path,
+                    Name = Path.GetFileNameWithoutExtension(path), // 名字我们仍然用 .lnk 文件的名字
+                    Path = resolvedPath, // 路径保存的是解析后的真实路径
+                    Arguments = arguments // 保存解析出的参数
                 };
                 targetDrawer.Items.Add(newShortcut);
                 _ = newShortcut.LoadIconAsync(this);
+            }
+        }
+        public void LaunchShortcut(ShortcutItem? item)
+        {
+            if (item == null || string.IsNullOrEmpty(item.Path)) return;
+            try
+            {
+                var psi = new ProcessStartInfo(item.Path)
+                {
+                    UseShellExecute = true,
+                    Arguments = item.Arguments // 👇 核心修正：将保存的参数传递给进程
+                };
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"无法打开目标：\n{item.Path}\n\n错误: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -133,20 +153,6 @@ namespace DesktopShortcutManager.ViewModels
                 }
                 catch { return null; }
             });
-        }
-
-        public void LaunchShortcut(ShortcutItem? item)
-        {
-            if (item == null || string.IsNullOrEmpty(item.Path)) return;
-            try
-            {
-                var psi = new ProcessStartInfo(item.Path) { UseShellExecute = true };
-                Process.Start(psi);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"无法打开文件：\n{item.Path}\n\n错误: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
         }
         #endregion
 

@@ -17,7 +17,6 @@ namespace DesktopShortcutManager
         private const int WM_NCLBUTTONDOWN = 0x00A1;
         // 非客户区区域代码：标题栏（点击此区域会触发移动）
         private const int HTCAPTION = 0x0002;
-       
         private readonly MainViewModel _viewModel;
 
         public MainWindow()
@@ -38,7 +37,6 @@ namespace DesktopShortcutManager
 
             this.Closing += MainWindow_Closing;
         }
-
         // 窗口初始化时注册消息钩子
         protected override void OnSourceInitialized(EventArgs e)
         {
@@ -63,8 +61,6 @@ namespace DesktopShortcutManager
             }
             return IntPtr.Zero;
         }
-
-
         private void MainWindow_Closing(object? sender, CancelEventArgs e)
         {
             _viewModel.GetDataService().Save(_viewModel.Drawers);

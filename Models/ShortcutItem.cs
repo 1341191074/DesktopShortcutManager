@@ -32,7 +32,8 @@ namespace DesktopShortcutManager.Models
             get => _isEditing;
             set { _isEditing = value; OnPropertyChanged(); }
         }
-
+        // 用于存储快捷方式的启动参数
+        public string? Arguments { get; set; }
         /// <summary>
         /// Asynchronously loads the icon for this shortcut item.
         /// </summary>
@@ -41,5 +42,7 @@ namespace DesktopShortcutManager.Models
         {
             Icon = await viewModel.GetIconForFileAsync(Path);
         }
+   
+
     }
 }
