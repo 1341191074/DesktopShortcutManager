@@ -70,6 +70,8 @@
         <SolidColorBrush x:Key="PrimaryColorBrush" Color="{StaticResource PrimaryColor}"/>
         <Color x:Key="AccentColor">#3498DB</Color>
         <SolidColorBrush x:Key="AccentColorBrush" Color="{StaticResource AccentColor}"/>
+        <Color x:Key="TextColor">#3D3D3D</Color>
+        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
 
         <!-- Converters -->
         <converters:BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
@@ -146,21 +148,44 @@
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Image Source="{Binding Icon}" 
-                           Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize}"
-                           Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize}" Margin="5"/>
-                    <TextBlock Text="{Binding Name}" TextAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"
-                               FontSize="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize, Converter={StaticResource SizeToFontConverter}}"
-                               Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}"/>
-                    <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" TextAlignment="Center" AcceptsReturn="False"
-                             FontSize="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize, Converter={StaticResource SizeToFontConverter}}"
-                             Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}" KeyDown="EditableTextBox_KeyDown">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <!-- 图片区域，占据大部分空间 -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- 文字区域，高度自适应 -->
+                    </Grid.RowDefinitions>
+
+                    <Image Grid.Row="0" Source="{Binding Icon}" 
+                       RenderOptions.BitmapScalingMode="Fant"
+                       Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize}"
+                       Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize}" 
+                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+                    <TextBlock Grid.Row="1" Text="{Binding Name}" 
+                           TextAlignment="Center" 
+                           TextWrapping="NoWrap" 
+                           TextTrimming="CharacterEllipsis" 
+                           ToolTip="{Binding Name}"
+                           Foreground="{StaticResource TextBrush}"
+                           Padding="2,0,2,2"  
+                           VerticalAlignment="Bottom"
+                           FontSize="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize, Converter={StaticResource SizeToFontConverter}}"
+                           Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}"/>
+
+                    <TextBox Grid.Row="1" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" 
+                         TextAlignment="Center" 
+                         AcceptsReturn="False"
+                         Padding="2,0,2,2"
+                         VerticalAlignment="Bottom"
+                         FontSize="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize, Converter={StaticResource SizeToFontConverter}}"
+                         Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}" 
+                         KeyDown="EditableTextBox_KeyDown">
                         <TextBox.InputBindings>
                             <KeyBinding Key="Escape" Command="{Binding Source={StaticResource Proxy}, Path=Data.EndEditingCommand}" CommandParameter="{Binding}"/>
                         </TextBox.InputBindings>
                     </TextBox>
-                </StackPanel>
+                </Grid>
             </Border>
         </DataTemplate>
 
@@ -179,7 +204,7 @@
             </Grid.RowDefinitions>
 
             <!-- System Tray Icon (non-visual element) -->
-            <tb:TaskbarIcon Grid.Row="0" IconSource="/Assets/settings.ico" ToolTipText="Desktop Shortcut Manager">
+            <tb:TaskbarIcon Grid.Row="0" IconSource="/Assets/VStart.ico" ToolTipText="Desktop Shortcut Manager">
                 <tb:TaskbarIcon.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="退出" Click="TrayExit_Click"/>

@@ -8,14 +8,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
 	<EnableWindowsTargeting>true</EnableWindowsTargeting>
+	<ApplicationIcon>Assets\VStart.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="Assets\close.png" />
     <None Remove="Assets\lock.png" />
-    <None Remove="Assets\setting.ico" />
     <None Remove="Assets\settings.ico" />
     <None Remove="Assets\unlock.png" />
+    <None Remove="Assets\VStart.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -39,6 +40,7 @@
    <Resource Include="Assets\lock.png" />
    <Resource Include="Assets\settings.ico" />
    <Resource Include="Assets\unlock.png" />
+   <Resource Include="Assets\VStart.ico" />
  </ItemGroup>
 
 </Project>
