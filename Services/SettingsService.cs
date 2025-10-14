@@ -8,6 +8,8 @@ namespace DesktopShortcutManager.Services
 {
     public class SettingsService
     {
+        private Timer? _debounceTimer; // 防抖计时器
+
         // --- Singleton Pattern Implementation ---
         private static readonly Lazy<SettingsService> _instance = new Lazy<SettingsService>(() => new SettingsService());
         public static SettingsService Instance => _instance.Value;
@@ -26,6 +28,23 @@ namespace DesktopShortcutManager.Services
             _filePath = Path.Combine(appFolderPath, "settings.json");
 
             CurrentSettings = Load();
+
+            // 订阅配置模型的属性变化事件
+            CurrentSettings.PropertyChanged += (sender, args) =>
+            {
+                // 当任何一个设置属性发生变化时，触发防抖保存
+                DebounceSave();
+            };
+        }
+
+        private void DebounceSave()
+        {
+            _debounceTimer?.Dispose();
+            _debounceTimer = new Timer(
+                callback: _ => Save(),
+                state: null,
+                dueTime: 500, // 500ms 延迟
+                period: Timeout.Infinite);
         }
 
         private SettingsModel Load()
