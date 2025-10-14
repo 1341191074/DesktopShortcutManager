@@ -137,22 +137,16 @@ namespace DesktopShortcutManager.ViewModels
 
         public async Task<ImageSource?> GetIconForFileAsync(string filePath)
         {
-            return await Task.Run(() =>
+            // 我们不再需要Task.Run，因为新的IconExtractor内部已经处理好了线程
+            try
             {
-                try
-                {
-                    if (!File.Exists(filePath) && !Directory.Exists(filePath)) return null;
-                    using (var icon = Icon.ExtractAssociatedIcon(filePath))
-                    {
-                        if (icon == null) return null;
-                        var imageSource = Imaging.CreateBitmapSourceFromHIcon(
-                            icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                        imageSource.Freeze();
-                        return imageSource;
-                    }
-                }
-                catch { return null; }
-            });
+                // 将当前应用程序的UI调度器传递过去
+                return await IconExtractor.GetIconAsync(filePath, Application.Current.Dispatcher);
+            }
+            catch
+            {
+                return null;
+            }
         }
         #endregion
 

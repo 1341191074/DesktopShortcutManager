@@ -83,11 +83,21 @@
         <!-- Binding Proxy -->
         <utils:BindingProxy x:Key="Proxy" Data="{Binding}"/>
 
+        <!-- 👇 新增：一个通用的应用程序占位图标 (矢量图形) 👇 -->
+        <DrawingImage x:Key="DefaultAppIcon">
+            <DrawingImage.Drawing>
+                <GeometryDrawing Brush="#B0BEC5">
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M4,4H20C21.1,4 22,4.9 22,6V18C22,19.1 21.1,20 20,20H4C2.9,20 2,19.1 2,18V6C2,4.9 2.9,4 4,4M7.4,15.5L10.2,12L7.8,8.5L9.2,7.4L12,10.2L14.8,7.4L16.2,8.5L13.8,12L16.6,15.5L15.2,16.6L12.4,13.8L9.4,16.6L7.4,15.5Z" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingImage.Drawing>
+        </DrawingImage>
+
         <!-- Data Template with Animation -->
         <DataTemplate x:Key="ShortcutGridItemTemplate">
             <Border DataContext="{Binding}" ToolTip="{Binding Path}" CornerRadius="8" Padding="8" Margin="4"
                     Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize, Converter={StaticResource SizeToContainerConverter}}"
-                    Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize, Converter={StaticResource SizeToContainerConverter}}"
                     MouseLeftButtonUp="Shortcut_MouseLeftButtonUp">
                 <Border.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick" 
@@ -150,17 +160,22 @@
                 </Border.Style>
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                         <!-- 图片区域，占据大部分空间 -->
                         <RowDefinition Height="Auto"/>
                         <!-- 文字区域，高度自适应 -->
                     </Grid.RowDefinitions>
 
-                    <Image Grid.Row="0" Source="{Binding Icon}" 
+                    <Image Grid.Row="0"
                        RenderOptions.BitmapScalingMode="Fant"
+                       SnapsToDevicePixels="True"
                        Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize}"
                        Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize}" 
-                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                       VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <Image.Source>
+                            <Binding Path="Icon" TargetNullValue="{StaticResource DefaultAppIcon}"/>
+                        </Image.Source>
+                    </Image>
 
                     <TextBlock Grid.Row="1" Text="{Binding Name}" 
                            TextAlignment="Center" 
