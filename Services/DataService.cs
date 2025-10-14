@@ -16,7 +16,7 @@ namespace DesktopShortcutManager.Services
             // 构造函数中确定文件路径
             // AppData/ShortcutManager/data.json
             // string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            string appDataPath = "";
+            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string appFolderPath = Path.Combine(appDataPath, "ShortcutManager");
 
             // 确保目录存在

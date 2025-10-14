@@ -22,7 +22,7 @@ namespace DesktopShortcutManager.Services
         {
             // Initialize and load settings
             // string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            string appDataPath = "";
+            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string appFolderPath = Path.Combine(appDataPath, "ShortcutManager");
             Directory.CreateDirectory(appFolderPath);
             _filePath = Path.Combine(appFolderPath, "settings.json");

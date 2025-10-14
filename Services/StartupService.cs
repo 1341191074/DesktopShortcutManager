@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
 using System.Windows;
+using IWshRuntimeLibrary; // 核心修正：现在我们只使用这个COM库
 
 namespace DesktopShortcutManager.Services
 {
@@ -22,75 +20,36 @@ namespace DesktopShortcutManager.Services
                     string? exePath = Environment.ProcessPath;
                     if (string.IsNullOrEmpty(exePath)) return;
 
-                    // 使用我们自己的、纯净的快捷方式创建方法
-                    CreateShortcut(ShortcutPath, exePath, AppContext.BaseDirectory);
+                    string? workingDirectory = Path.GetDirectoryName(exePath);
+                    if (string.IsNullOrEmpty(workingDirectory)) return;
+
+                    // --- 核心修正：使用 WshShell 来创建快捷方式 ---
+                    WshShell shell = new WshShell();
+                    IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(ShortcutPath);
+
+                    shortcut.Description = "启动桌面快捷方式管理器";
+                    shortcut.TargetPath = exePath;
+                    shortcut.WorkingDirectory = workingDirectory;
+
+                    shortcut.Save();
                 }
                 else
                 {
-                    if (File.Exists(ShortcutPath))
+                    if (System.IO.File.Exists(ShortcutPath))
                     {
-                        File.Delete(ShortcutPath);
+                        System.IO.File.Delete(ShortcutPath);
                     }
                 }
             }
             catch (Exception ex)
             {
-                // 关键修正：现在，任何错误都会通过MessageBox弹出，我们不会再“盲目”了！
                 MessageBox.Show($"设置开机自启动时发生错误: \n\n{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         public static bool IsStartupEnabled()
         {
-            return File.Exists(ShortcutPath);
+            return System.IO.File.Exists(ShortcutPath);
         }
-
-        #region Pure .LNK Creation Logic (No COM)
-
-        private static void CreateShortcut(string shortcutPath, string targetPath, string workingDirectory)
-        {
-            IShellLink link = (IShellLink)new ShellLink();
-
-            // 设置快捷方式的属性
-            link.SetPath(targetPath);
-            link.SetWorkingDirectory(workingDirectory);
-
-            // 保存快捷方式文件
-            IPersistFile file = (IPersistFile)link;
-            file.Save(shortcutPath, false);
-        }
-
-        [ComImport]
-        [Guid("00021401-0000-0000-C000-000000000046")]
-        internal class ShellLink
-        {
-        }
-
-        [ComImport]
-        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        [Guid("000214F9-0000-0000-C000-000000000046")]
-        internal interface IShellLink
-        {
-            void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile, int cchMaxPath, out IntPtr pfd, int fFlags);
-            void GetIDList(out IntPtr ppidl);
-            void SetIDList(IntPtr pidl);
-            void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszName, int cchMaxName);
-            void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string pszName);
-            void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszDir, int cchMaxPath);
-            void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string pszDir);
-            void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszArgs, int cchMaxChars);
-            void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string pszArgs);
-            void GetHotkey(out short pwHotkey);
-            void SetHotkey(short wHotkey);
-            void GetShowCmd(out int piShowCmd);
-            void SetShowCmd(int iShowCmd);
-            void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszIconPath, int cchIconPath, out int piIcon);
-            void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string pszIconPath, int iIcon);
-            void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string pszPathRel, int dwReserved);
-            void Resolve(IntPtr hwnd, int fFlags);
-            void SetPath([MarshalAs(UnmanagedType.LPWStr)] string pszFile);
-        }
-
-        #endregion
     }
 }
