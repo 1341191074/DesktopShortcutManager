@@ -1,78 +1,96 @@
-﻿using Microsoft.Win32; // 引入操作注册表所需的命名空间
-using System;
-using System.Diagnostics;
-using System.Reflection;
+﻿using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+using System.Text;
+using System.Windows;
 
 namespace DesktopShortcutManager.Services
 {
     public static class StartupService
     {
-        // 定义我们应用在注册表中的唯一名称
-        private const string AppName = "DesktopShortcutManager";
+        private const string ShortcutName = "DesktopShortcutManager.lnk";
+        private static readonly string StartupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+        private static readonly string ShortcutPath = Path.Combine(StartupFolderPath, ShortcutName);
 
-        // 定义注册表路径
-        private const string RunRegistryPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
-
-        /// <summary>
-        /// 设置或取消开机自启动
-        /// </summary>
-        /// <param name="isEnabled">True to enable, False to disable.</param>
         public static void SetStartup(bool isEnabled)
         {
             try
             {
-                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunRegistryPath, true))
+                if (isEnabled)
                 {
-                    if (key == null) return;
+                    string? exePath = Environment.ProcessPath;
+                    if (string.IsNullOrEmpty(exePath)) return;
 
-                    if (isEnabled)
+                    // 使用我们自己的、纯净的快捷方式创建方法
+                    CreateShortcut(ShortcutPath, exePath, AppContext.BaseDirectory);
+                }
+                else
+                {
+                    if (File.Exists(ShortcutPath))
                     {
-                        // 获取当前正在运行的 .exe 文件的完整路径
-                        // 使用 AppContext.BaseDirectory 更可靠，可以找到 .exe 而不是 .dll
-                        string? exePath = Process.GetCurrentProcess().MainModule?.FileName;
-                        if (!string.IsNullOrEmpty(exePath))
-                        {
-                            // 创建或更新注册表项
-                            key.SetValue(AppName, $"\"{exePath}\"");
-                        }
-                    }
-                    else
-                    {
-                        // 如果存在，则删除注册表项
-                        if (key.GetValue(AppName) != null)
-                        {
-                            key.DeleteValue(AppName, false);
-                        }
+                        File.Delete(ShortcutPath);
                     }
                 }
             }
             catch (Exception ex)
             {
-                // 在真实应用中，这里应该记录日志
-                Console.WriteLine($"Error setting startup: {ex.Message}");
+                // 关键修正：现在，任何错误都会通过MessageBox弹出，我们不会再“盲目”了！
+                MessageBox.Show($"设置开机自启动时发生错误: \n\n{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        /// <summary>
-        /// 检查当前是否已设置为开机自启动
-        /// </summary>
         public static bool IsStartupEnabled()
         {
-            try
-            {
-                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunRegistryPath, false))
-                {
-                    if (key == null) return false;
-
-                    // 检查是否存在以我们应用命名的键值对
-                    object? value = key.GetValue(AppName);
-                    return value != null;
-                }
-            }
-            catch
-            {
-                return false;
-            }
+            return File.Exists(ShortcutPath);
         }
+
+        #region Pure .LNK Creation Logic (No COM)
+
+        private static void CreateShortcut(string shortcutPath, string targetPath, string workingDirectory)
+        {
+            IShellLink link = (IShellLink)new ShellLink();
+
+            // 设置快捷方式的属性
+            link.SetPath(targetPath);
+            link.SetWorkingDirectory(workingDirectory);
+
+            // 保存快捷方式文件
+            IPersistFile file = (IPersistFile)link;
+            file.Save(shortcutPath, false);
+        }
+
+        [ComImport]
+        [Guid("00021401-0000-0000-C000-000000000046")]
+        internal class ShellLink
+        {
+        }
+
+        [ComImport]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        [Guid("000214F9-0000-0000-C000-000000000046")]
+        internal interface IShellLink
+        {
+            void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile, int cchMaxPath, out IntPtr pfd, int fFlags);
+            void GetIDList(out IntPtr ppidl);
+            void SetIDList(IntPtr pidl);
+            void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszName, int cchMaxName);
+            void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string pszName);
+            void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszDir, int cchMaxPath);
+            void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string pszDir);
+            void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszArgs, int cchMaxChars);
+            void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string pszArgs);
+            void GetHotkey(out short pwHotkey);
+            void SetHotkey(short wHotkey);
+            void GetShowCmd(out int piShowCmd);
+            void SetShowCmd(int iShowCmd);
+            void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszIconPath, int cchIconPath, out int piIcon);
+            void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string pszIconPath, int iIcon);
+            void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string pszPathRel, int dwReserved);
+            void Resolve(IntPtr hwnd, int fFlags);
+            void SetPath([MarshalAs(UnmanagedType.LPWStr)] string pszFile);
+        }
+
+        #endregion
     }
 }
