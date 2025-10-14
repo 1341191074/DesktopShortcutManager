@@ -37,6 +37,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" MinWidth="80"/>
@@ -45,29 +46,38 @@
                 <!-- Controls -->
             </Grid.ColumnDefinitions>
 
+
+            <!-- 开机自启动设置 👇 -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="系统集成:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <CheckBox Grid.Row="0" Grid.Column="1" Content="开机时自动启动" 
+              IsChecked="{Binding RunAtStartup, Mode=TwoWay}" 
+              Margin="10,5" VerticalAlignment="Center"/>
+
             <!-- 锁定设置 -->
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="窗口行为:" VerticalAlignment="Center" FontWeight="SemiBold"/>
-            <CheckBox Grid.Row="0" Grid.Column="1" Content="锁定窗口位置和大小" 
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="窗口行为:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <CheckBox Grid.Row="1" Grid.Column="1" Content="锁定窗口位置和大小" 
                       IsChecked="{Binding IsLocked, Mode=TwoWay}" 
                       Margin="10,5" VerticalAlignment="Center"/>
 
             <!-- 打开方式设置 -->
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="打开方式:" VerticalAlignment="Top" Margin="0,8,0,0" FontWeight="SemiBold"/>
-            <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,5">
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="打开方式:" VerticalAlignment="Top" Margin="0,8,0,0" FontWeight="SemiBold"/>
+            <StackPanel Grid.Row="2" Grid.Column="1" Margin="10,5">
+                <RadioButton Content="双击打开快捷方式" GroupName="Activation" 
+             IsChecked="{Binding IsOpenWithDoubleClick, Mode=TwoWay}" Margin="0,5,0,0"/>
                 <RadioButton Content="单击打开快捷方式" GroupName="Activation" 
                              IsChecked="{Binding IsOpenWithSingleClick, Mode=TwoWay}"/>
-                <RadioButton Content="双击打开快捷方式" GroupName="Activation" 
-                             IsChecked="{Binding IsOpenWithDoubleClick, Mode=TwoWay}" Margin="0,5,0,0"/>
+
             </StackPanel>
 
             <!-- 外观设置 -->
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="不透明度:" VerticalAlignment="Center" FontWeight="SemiBold"/>
-            <Slider Grid.Row="2" Grid.Column="1" Minimum="20" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="10"
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="不透明度:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <Slider Grid.Row="3" Grid.Column="1" Minimum="20" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="10"
                     Value="{Binding OpacityValue, Mode=TwoWay}" 
                     Margin="10,5" VerticalAlignment="Center"/>
 
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="图标大小:" VerticalAlignment="Center" FontWeight="SemiBold"/>
-            <Slider Grid.Row="3" Grid.Column="1" Minimum="24" Maximum="64" TickFrequency="8" IsSnapToTickEnabled="True"
+            <!-- 图标大小 -->
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="图标大小:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <Slider Grid.Row="4" Grid.Column="1" Minimum="24" Maximum="64" TickFrequency="8" IsSnapToTickEnabled="True"
                     Value="{Binding IconSize, Mode=TwoWay}" 
                     Margin="10,5" VerticalAlignment="Center"/>
         </Grid>

@@ -1,4 +1,5 @@
-﻿using DesktopShortcutManager.Utils; 
+﻿using DesktopShortcutManager.Services;
+using DesktopShortcutManager.Utils; 
 using System.Text.Json.Serialization;
 
 namespace DesktopShortcutManager.Models
@@ -74,5 +75,20 @@ namespace DesktopShortcutManager.Models
         public double Left { get; set; } = 100;
         public double Width { get; set; } = 280;
         public double Height { get; set; } = 700;
+
+        private bool _runAtStartup;
+        public bool RunAtStartup
+        {
+            get => _runAtStartup;
+            set
+            {
+                if (_runAtStartup == value) return;
+                _runAtStartup = value;
+                OnPropertyChanged();
+
+                // 当属性改变时，立即调用服务更新注册表
+                StartupService.SetStartup(value);
+            }
+        }
     }
 }

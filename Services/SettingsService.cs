@@ -19,7 +19,8 @@ namespace DesktopShortcutManager.Services
         private SettingsService()
         {
             // Initialize and load settings
-            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            // string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string appDataPath = "";
             string appFolderPath = Path.Combine(appDataPath, "ShortcutManager");
             Directory.CreateDirectory(appFolderPath);
             _filePath = Path.Combine(appFolderPath, "settings.json");
@@ -29,6 +30,7 @@ namespace DesktopShortcutManager.Services
 
         private SettingsModel Load()
         {
+            SettingsModel settings;
             if (!File.Exists(_filePath))
             {
                 return new SettingsModel(); // Return default settings
@@ -36,12 +38,15 @@ namespace DesktopShortcutManager.Services
             try
             {
                 string jsonString = File.ReadAllText(_filePath);
-                return JsonSerializer.Deserialize<SettingsModel>(jsonString) ?? new SettingsModel();
+                settings = JsonSerializer.Deserialize<SettingsModel>(jsonString) ?? new SettingsModel();
             }
             catch
             {
-                return new SettingsModel(); // Return default on error
+                settings = new SettingsModel(); // Return default on error
             }
+            // 加载完配置后，用注册表的真实状态覆盖配置中的值
+            settings.RunAtStartup = StartupService.IsStartupEnabled();
+            return settings;
         }
 
         public void Save()
