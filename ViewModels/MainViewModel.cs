@@ -214,22 +214,43 @@ namespace DesktopShortcutManager.ViewModels
         #region GongSolutions.Wpf.DragDrop IDropTarget Implementation
         public void DragOver(IDropInfo dropInfo)
         {
-            if (dropInfo.Data is ShortcutItem && dropInfo.TargetCollection is ObservableCollection<ShortcutItem>)
+            var sourceItem = dropInfo.Data;
+            var targetItem = dropInfo.TargetItem;
+
+            // --- 👇 核心修正：全新的、更灵活的“门卫”逻辑 👇 ---
+
+            // 场景 1: 拖拽的是快捷方式 (ShortcutItem)
+            if (sourceItem is ShortcutItem)
             {
-                dropInfo.DropTargetAdorner = DropTargetAdorners.Insert;
-                dropInfo.Effects = DragDropEffects.Move;
+                // 允许放置到快捷方式列表 或 抽屉本身
+                if (targetItem is ShortcutItem ||
+                    targetItem is Drawer ||
+                    dropInfo.TargetCollection is ObservableCollection<ShortcutItem>)
+                {
+                    dropInfo.DropTargetAdorner = DropTargetAdorners.Insert;
+                    dropInfo.Effects = DragDropEffects.Move;
+                    return;
+                }
             }
-            else if (dropInfo.Data is Drawer && dropInfo.TargetCollection is ObservableCollection<Drawer>)
+            // 场景 2: 拖拽的是抽屉 (Drawer)
+            else if (sourceItem is Drawer)
             {
-                dropInfo.DropTargetAdorner = DropTargetAdorners.Insert;
-                dropInfo.Effects = DragDropEffects.Move;
+                if (targetItem is Drawer || dropInfo.TargetCollection is ObservableCollection<Drawer>)
+                {
+                    dropInfo.DropTargetAdorner = DropTargetAdorners.Insert;
+                    dropInfo.Effects = DragDropEffects.Move;
+                    return;
+                }
             }
+            // 场景 3: 拖拽的是外部文件
             else if (dropInfo.Data is IDataObject dataObject && dataObject.GetDataPresent(DataFormats.FileDrop))
             {
-                if (dropInfo.TargetItem is Drawer)
+                // 只允许放置到抽屉本身
+                if (targetItem is Drawer targetDrawer)
                 {
                     dropInfo.DropTargetAdorner = DropTargetAdorners.Highlight;
                     dropInfo.Effects = DragDropEffects.Copy;
+                    return;
                 }
             }
         }
@@ -238,8 +259,36 @@ namespace DesktopShortcutManager.ViewModels
         {
             if (dropInfo.Data is ShortcutItem shortcut)
             {
-                ((ObservableCollection<ShortcutItem>)dropInfo.DragInfo.SourceCollection).Remove(shortcut);
-                ((ObservableCollection<ShortcutItem>)dropInfo.TargetCollection).Insert(dropInfo.InsertIndex, shortcut);
+                //((ObservableCollection<ShortcutItem>)dropInfo.DragInfo.SourceCollection).Remove(shortcut);
+                //((ObservableCollection<ShortcutItem>)dropInfo.TargetCollection).Insert(dropInfo.InsertIndex, shortcut);
+                // 首先，从源集合中移除
+                var sourceCollection = (ObservableCollection<ShortcutItem>)dropInfo.DragInfo.SourceCollection;
+                sourceCollection.Remove(shortcut);
+
+                // --- 判断放置目标 ---
+
+                // 场景1：如果目标是另一个快捷方式 (精确放置)
+                if (dropInfo.TargetItem is ShortcutItem)
+                {
+                    var targetCollection = (ObservableCollection<ShortcutItem>)dropInfo.TargetCollection;
+                    targetCollection.Insert(dropInfo.InsertIndex, shortcut);
+                }
+                // 场景2：如果目标是抽屉本身 (快速归类)
+                else if (dropInfo.TargetItem is Drawer targetDrawer)
+                {
+                    // 将快捷方式添加到这个抽屉的末尾
+                    targetDrawer.Items.Add(shortcut);
+                }
+                // 场景3：如果目标是抽屉内的空白区域 (也属于精确放置)
+                else if (dropInfo.TargetCollection is ObservableCollection<ShortcutItem> targetCollection)
+                {
+                    targetCollection.Insert(dropInfo.InsertIndex, shortcut);
+                }
+                else
+                {
+                    // 极端情况：如果放置到了一个未知区域，安全地将其放回原处
+                    sourceCollection.Insert(dropInfo.DragInfo.SourceIndex, shortcut);
+                }
             }
             else if (dropInfo.Data is Drawer drawer)
             {
