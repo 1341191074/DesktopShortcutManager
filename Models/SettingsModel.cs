@@ -1,6 +1,8 @@
 ﻿using DesktopShortcutManager.Services;
 using DesktopShortcutManager.Utils; 
 using System.Text.Json.Serialization;
+using System.Windows;
+using System.Windows.Media;
 
 namespace DesktopShortcutManager.Models
 {
@@ -58,10 +60,17 @@ namespace DesktopShortcutManager.Models
             set => OpenWithDoubleClick = value;
         }
 
+        // 修改Models/SettingsModel.cs
         private double _iconSize = 32;
         public double IconSize
         {
-            get => _iconSize;
+            get
+            {
+                // 应用系统缩放比例
+                var dpiScale = Application.Current.MainWindow?.LayoutTransform as ScaleTransform;
+                var scale = dpiScale?.ScaleX ?? 1.0;
+                return _iconSize * scale;
+            }
             set
             {
                 if (_iconSize == value) return;

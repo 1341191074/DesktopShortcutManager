@@ -93,7 +93,6 @@
                 </GeometryDrawing>
             </DrawingImage.Drawing>
         </DrawingImage>
-
         <!-- Data Template with Animation -->
         <DataTemplate x:Key="ShortcutGridItemTemplate">
             <Border DataContext="{Binding}" ToolTip="{Binding Path}" CornerRadius="8" Padding="8" Margin="4"
@@ -160,22 +159,22 @@
                 </Border.Style>
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
                         <!-- 图片区域，占据大部分空间 -->
                         <RowDefinition Height="Auto"/>
                         <!-- 文字区域，高度自适应 -->
                     </Grid.RowDefinitions>
 
-                    <Image Grid.Row="0"
-                       RenderOptions.BitmapScalingMode="Fant"
-                       SnapsToDevicePixels="True"
-                       Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize}"
-                       Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize}" 
-                       VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <Image.Source>
-                            <Binding Path="Icon" TargetNullValue="{StaticResource DefaultAppIcon}"/>
-                        </Image.Source>
-                    </Image>
+                    <Viewbox Grid.Row="0"
+                             Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize}"
+                             Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=CurrentSettings.IconSize}"
+                             VerticalAlignment="Center" HorizontalAlignment="Center">
+
+                        <Image Source="{Binding Icon, TargetNullValue={StaticResource DefaultAppIcon}}" 
+                               RenderOptions.BitmapScalingMode="Fant"
+                               SnapsToDevicePixels="True"/>
+
+                    </Viewbox>
 
                     <TextBlock Grid.Row="1" Text="{Binding Name}" 
                            TextAlignment="Center" 
