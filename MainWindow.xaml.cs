@@ -4,16 +4,29 @@ using DesktopShortcutManager.ViewModels;
 using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 
 namespace DesktopShortcutManager
 {
     public partial class MainWindow : Window
     {
+        #region Win32 API for Hiding from Alt+Tab
+        // --- 2. 定义Win32 API常量和函数 ---
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hwnd, int index);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hwnd, int index, int newStyle);
+        #endregion
         private readonly MainViewModel _viewModel;
 
         public MainWindow()
@@ -35,7 +48,20 @@ namespace DesktopShortcutManager
             this.Closing += MainWindow_Closing;
         }
 
+        // --- 3. 重写 OnSourceInitialized 方法  ---
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
 
+            // 获取窗口句柄 (HWND)
+            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+
+            // 获取当前窗口的扩展样式
+            int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+
+            // 添加 WS_EX_TOOLWINDOW 样式，并设置回去
+            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TOOLWINDOW);
+        }
 
         private void MainWindow_Closing(object? sender, CancelEventArgs e)
         {
